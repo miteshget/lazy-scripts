@@ -1,0 +1,12 @@
+= lazy-scripts
+
+== How to setup connect command 
+
+. Clone git repository whereever you want
+. Find out the path where have downloaded 
+. Set environment variable in .profile or .bashrc
+  .. alias connect='/System/Path/lazy-scripts/connect
+. source .profile or .bashrc or logout and login  
+. Now you can use command connect with its options
+
+NOTE: Make sure google chrome is installed and I have done test only on MacOS;
