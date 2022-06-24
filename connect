@@ -1,0 +1,128 @@
+#!/bin/bash
+# Author: Mitesh Sharma
+# Email: mitsharm@redhat.com
+# License: GPLv3
+# Version: 1.0
+
+#Include variables
+source $(dirname $0)/connect.vars
+
+# "How to Use connect command line"
+usage() {
+  CMD_NAME=$(basename ${0})
+  echo -e "\n\033[32mHow to use ${CMD_NAME} command"
+  echo -n -e  "\033[31m"
+  echo "----------------------------------------------------------"
+  echo -e  "* To Ssh"
+  echo -e "\t$CMD_NAME (web | dev | prod)\n"
+  echo -e  "* To Open Git repository over browser"
+  echo -e "\t$CMD_NAME (gitlab | agv | agd | mygit | lab-mgr)\n"
+  echo -e  "* To Join BlueJeans meeting"
+  echo -e "\t$CMD_NAME (mybj | matebj | cbj)\n"
+  echo -e  "* To Open Web url"
+  echo -e "\t$CMD_NAME (tower | satellite | gitlab | slack | labs)"
+  echo "----------------------------------------------------------"
+  echo -e "\033[0m \n"
+  exit 2
+}
+
+# Guid checker
+guid_check(){
+    if [ ! -z ${1} ]; then
+      export GUID=${1}
+    else
+      echo -e "guid argument is missing\n"
+      exit 1
+    fi
+}
+# Node SSH 
+node_ssh(){
+  SSH_USER=${1-cloud-user}
+  HOST=${2-control}
+  DOMAIN=${3-${DEFAULT_NODE_DOMAIN}}
+  SSH_KEY=${4-${DEFAULT_NODE_SSH_KEY_PATH}} 
+  ssh -i ${SSH_KEY} ${SSH_USER}@${HOST}.${GUID}.${DOMAIN}
+}
+# Open HTTPS URL in chrome
+google_chrome(){
+  PORT=${1-443}
+  HOST=${2-control}
+  DOMAIN=${3-${DEFAULT_NODE_DOMAIN}}
+  open -n -a "Google Chrome" https://${HOST}.${GUID}.${DOMAIN}:${PORT}
+}
+
+google_tab(){
+  if [  -z "${1}" ]; then
+    echo "Hey buddy you forgot to define URL"
+    exit 127
+  fi
+  open -n -a "Google Chrome" ${1}
+}
+# Connect github repositories
+github_repo(){
+  REPO_NAME=${1}
+  open -n -a "Google Chrome"  https://github.com/${REPO_NAME}
+}
+
+# Main Script
+case ${1} in
+  sandbox)
+    if [ -z ${2} ]; then
+      echo -e "\nUsage: connect sandbox guid.sandboxXXXX.opentlc.com\n"
+      exit 1
+    else
+      SSH_KEY=${3-${DEFAULT_NODE_SSH_KEY_PATH}} 
+      ssh -i ${SSH_KEY} ec2-user@bastion.${2}
+    fi
+    ;;
+  control)
+    guid_check ${2}
+    node_ssh 
+    ;;
+  bastion)
+    guid_check ${2}
+    node_ssh cloud-user ${1}
+    ;;
+  gitlab) 
+    guid_check ${2}
+    google_chrome 8929
+    ;;
+  tower)
+    guid_check ${2}
+    google_chrome 8443
+    ;;
+  satellite) 
+    guid_check ${2}
+    google_chrome 443 satellite
+    ;;
+  web)
+    ssh ${DEFAULT_LOGIN_ID}@${WEB_SERVER} ;;
+  prod)
+    ssh ${DEFAULT_LOGIN_ID}@${PROD_SERVER} ;;
+  dev)
+    ssh ${DEFAULT_LOGIN_ID}@${DEV_SERVER} ;;
+  agv) 
+    github_repo "redhat-gpe/agnosticv" ;;
+  agd) 
+    github_repo redhat-cop/agnosticd ;;
+  mygit) 
+    github_repo miteshget?tab=repositories ;;
+  lab-mgr) 
+    github_repo redhat-gpte-devopsautomation/lab-manager ;;
+  handson) 
+    github_repo redhat-gpe/hands_on_ansible_automation_platform_2 ;;
+  slack) 
+    google_tab ${SLACK_WORKSPACE} ;;
+  labs) 
+    google_tab ${OPENTC_LAB_CONSOLE} ;;
+  slides)
+    google_tab ${SLIDE_URL} ;;
+  mybj)
+    google_tab ${MY_BLUEJEANS} ;;
+  matebj)
+    google_tab ${MATE_BLUEJEANS} ;;
+  cbj)
+    google_tab ${CLASS_BLUEJEANS} ;;
+  *)
+    usage ;;
+esac
